@@ -1,0 +1,15 @@
+[package]
+name = "counterapp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gdk = { git = "https://github.com/gtk-rs/gtk4-rs.git", package = "gdk4" }
+gdk-wayland = { git = "https://github.com/gtk-rs/gtk4-rs.git", package = "gdk4-wayland" }
+
+[dependencies.gtk]
+package = "gtk4"
+version = "0.8.1"
+features = ["v4_12"]
