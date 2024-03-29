@@ -1,18 +1,21 @@
-use gtk::{prelude::*, Application, ApplicationWindow, Box, Button, Label, glib};
-use std::{cell::Cell, rc::Rc};
+use gtk::{prelude::*, Application, ApplicationWindow, Button};
 
 mod model;
 use crate::model::counter::Counter;
 
 fn on_activate(app: &Application) {
-    let app_box = Box::builder()
+    let app_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .build();
     let add_button = Button::builder().label("add counter").build();
+    let new_counter = gtk::Entry::new();
+    
+    app_box.append(&new_counter);
 
     let copied = app_box.clone();
     add_button.connect_clicked(move |_| {
-        let new_counter = Counter::new("aaaa");
+        let a = new_counter.text();
+        let new_counter = Counter::new(a.as_str());
         let new_label = new_counter.counter_widget();
         copied.prepend(&new_label);
     });

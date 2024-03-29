@@ -1,7 +1,6 @@
 use gtk::{prelude::*, Box, Button};
-use std::{cell::Cell, ops::Deref, rc::Rc};
+use std::{cell::Cell, rc::Rc};
 
-#[derive(Debug)]
 pub struct Counter {
     name: String,
     value: Cell<i32>,
@@ -20,7 +19,7 @@ impl Counter {
 
         let counter = Rc::new(self.value.clone());
 
-        let component = Rc::new(CounterComponent::new(&self.clone()));
+        let component = Rc::new(CounterComponent::new(&self));
 
         {
             let counter = counter.clone();
