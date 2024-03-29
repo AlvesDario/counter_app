@@ -1,45 +1,102 @@
-use gtk::{prelude::*, Application, ApplicationWindow, Box, Button, Label, glib};
-use std::{cell::Cell, rc::Rc};
+use gtk::{prelude::*, Box, Button};
+use std::{cell::Cell, ops::Deref, rc::Rc};
 
 #[derive(Debug)]
 pub struct Counter {
     name: String,
-    value: i32,
-    child: Vec<Self>,
+    value: Cell<i32>,
 }
 
 impl Counter {
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_owned(),
-            value: 0,
-            child: Vec::new(),
+            value: Cell::new(0),
         }
     }
 
     pub fn counter_widget(&self) -> Box {
-        let counter_box = Box::builder().build();
-        let increase_button = Button::builder().label("increase").build();
-        let decrease_button = Button::builder().label("decrease").build();
+        let counter_box = Box::new(gtk::Orientation::Vertical, 2);
 
-        let copied = Rc::new(Cell::new(self.value));
-        let counter_label = Label::builder().label(self.value.to_string()).build();
-        let counter_name_label = Label::builder().label(self.name.to_string()).build();
+        let counter = Rc::new(self.value.clone());
 
-        decrease_button.connect_clicked(glib::clone!(@strong copied, @weak counter_label => move |_| {
-            copied.set(copied.get() - 1);
-            counter_label.set_label(&copied.get().to_string());
-        }));
+        let component = Rc::new(CounterComponent::new(&self.clone()));
 
-        increase_button.connect_clicked(glib::clone!(@strong copied, @weak counter_label => move |_| {
-            copied.set(copied.get() + 1);
-            counter_label.set_label(&copied.get().to_string());
-        }));
-
-        counter_box.append(&counter_name_label);
-        counter_box.append(&decrease_button);
-        counter_box.append(&counter_label);
-        counter_box.append(&increase_button);
+        {
+            let counter = counter.clone();
+            let label = component.value.clone();
+            component.increase.connect_clicked(move |_| {
+                counter.set(counter.get() + 1);
+                label.set_label(&counter.get().to_string());
+            });
+        }
+        {
+            let counter = counter.clone();
+            let label = component.value.clone();
+            component.decrease.connect_clicked(move |_| {
+                counter.set(counter.get() - 1);
+                label.set_label(&counter.get().to_string());
+            });
+        }
+        counter_box.append(&component.header);
+        counter_box.append(&component.counter_body());
         counter_box
     }
+}
+
+struct CounterComponent {
+    header: gtk::Box,
+    increase: gtk::Button,
+    decrease: gtk::Button,
+    value: gtk::Label,
+}
+
+impl CounterComponent {
+    pub fn new(counter: &Counter) -> Self {
+        Self {
+            header: CounterComponent::counter_header(&counter.name),
+            increase: CounterComponent::increase_button(),
+            decrease: CounterComponent::decrease_button(),
+            value: gtk::Label::new(Some(&counter.value.get().to_string())),
+        }
+    }
+
+    pub fn counter_body(&self) -> gtk::Box {
+        let body = gtk::Box::new(gtk::Orientation::Horizontal, 7);
+        body.append(&empty_space(gtk::Orientation::Horizontal));
+        body.append(&self.decrease);
+        body.append(&empty_space(gtk::Orientation::Horizontal));
+        body.append(&self.value);
+        body.append(&empty_space(gtk::Orientation::Horizontal));
+        body.append(&self.increase);
+        body.append(&empty_space(gtk::Orientation::Horizontal));
+        body
+    }
+
+    fn counter_header(name: &str) -> gtk::Box {
+        let header_box = gtk::Box::new(gtk::Orientation::Horizontal, 3);
+        header_box.append(&empty_space(gtk::Orientation::Horizontal));
+        header_box.append(&gtk::Label::new(Some(name)));
+        header_box.append(&empty_space(gtk::Orientation::Horizontal));
+        header_box
+    }
+
+    fn increase_button() -> gtk::Button {
+        let bt = Button::builder().label("+").build();
+        bt
+    }
+    fn decrease_button() -> gtk::Button {
+        let bt = Button::builder().label("-").build();
+        bt
+    }
+}
+
+fn empty_space(orientation: gtk::Orientation) -> gtk::Box {
+    let space = Box::new(orientation, 0);
+    if orientation == gtk::Orientation::Horizontal {
+        space.set_hexpand(true);
+        return space;
+    }
+    space.set_vexpand(true);
+    space
 }
